@@ -228,10 +228,11 @@ def process_and_save_dataset(data_obj, dataset_name, output_dir):
 
 
 if __name__ == "__main__":
+    ws = get_workspace()
     params = vars(get_params())
     pprint.pprint(params)
     
-    ws = get_workspace()
+
     output_base_dir = os.path.join(ws, f'datasets/mrgrp/{params["dataset"]}')
     dir_check(output_base_dir)
 

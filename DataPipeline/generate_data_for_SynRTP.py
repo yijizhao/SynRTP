@@ -6,8 +6,6 @@ from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from algorithm.strategy_model_1 import SynRTPDataset as DATASET
-from utils.utils import dir_check
 import networkx as nx
 import time
 
@@ -19,12 +17,60 @@ torch.manual_seed(2021)
 torch.cuda.manual_seed(2021)
 
 
-def get_workspace():
-    cur_path = os.path.abspath(__file__)
-    file = os.path.dirname(cur_path)
-    file = os.path.dirname(file)
-    return file
-ws = get_workspace()
+from pathlib import Path
+
+def get_workspace_modern():
+    workspace_path = Path(__file__).resolve().parent.parent
+    return str(workspace_path)
+
+ws = get_workspace_modern()
+
+def dir_check(path):
+    import os
+    dir = path if os.path.isdir(path) else os.path.split(path)[0]
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    return path
+
+# --Dataset
+from torch.utils.data import Dataset
+class SynDataset(Dataset):
+    def __init__(
+            self,
+            mode: str,
+            params: dict,
+    ) -> None:
+        super().__init__()
+        if mode not in ["train", "val", "test"]:
+            raise ValueError
+        path_key = {'train': 'train_path', 'val': 'val_path', 'test': 'test_path'}[mode]
+        path = params[path_key]
+        self.data = np.load(path, allow_pickle=True).item()
+
+    def __len__(self):
+
+        return len(self.data['V_len'])
+
+    def __getitem__(self, index):
+
+        E_static_fea = self.data['E_static_fea'][index]
+        E_mask = self.data['E_mask'][index]
+        A = self.data['A'][index]
+
+        V = self.data['V'][index]
+        V_len = self.data['V_len'][index]
+        V_reach_mask = self.data['V_reach_mask'][index]
+
+        route_label = self.data['route_label'][index]
+        label_len = self.data['label_len'][index]
+        start_fea = self.data['start_fea'][index]
+        start_idx = self.data['start_idx'][index]
+        cou_fea = self.data['cou_fea'][index]
+        time_label = self.data['time_label'][index]
+
+        return V, V_len, V_reach_mask, E_static_fea, E_mask, A, start_fea, start_idx, cou_fea, route_label, label_len, time_label
+
+
 
 
 def get_common_params():
@@ -404,7 +450,6 @@ def process_and_save_dataset(
     output_file_dir = os.path.dirname(output_filename)
     dir_check(output_file_dir)
 
-    print(f"Saving processed {dataset_name} dataset to: {output_filename}")
     np.save(output_filename, final_dataset, allow_pickle=True)
     end_time_total = time.time()
     print(
@@ -417,7 +462,7 @@ if __name__ == "__main__":
     device = torch.device("cpu")
     params["device"] = device
 
-    train_dataset = DATASET(mode="train", params=params)
+    train_dataset = SynDataset(mode="train", params=params)
     train_loader = DataLoader(
         train_dataset,
         batch_size=params["batch_size"],
@@ -425,7 +470,7 @@ if __name__ == "__main__":
         collate_fn=collate_fn,
     )
 
-    val_dataset = DATASET(mode="val", params=params)
+    val_dataset = SynDataset(mode="val", params=params)
     val_loader = DataLoader(
         val_dataset,
         batch_size=params["batch_size"],
@@ -433,7 +478,7 @@ if __name__ == "__main__":
         collate_fn=collate_fn,
     )
 
-    test_dataset = DATASET(mode="test", params=params)
+    test_dataset = SynDataset(mode="test", params=params)
     test_loader = DataLoader(
         test_dataset,
         batch_size=params["batch_size"],

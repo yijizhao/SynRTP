@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from utils.eval import Metric
-from algorithm.strategy_model_1 import SynRTPDataset as DATASET
+from algorithm.strategy_model import SynRTPDataset as DATASET
 from utils.utils import compute_lsd,EarlyStop,dict_merge, get_reinforce_samples,get_samples,batch2input,get_nonzeros_nrl,dir_check,compute_lsd_gdrpo,GDRPOLoss
 from utils.utils import eta_mae_loss_calc, Uncertainty_loss
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -32,9 +32,10 @@ def get_workspace():
     """
     cur_path = os.path.abspath(__file__)
     file = os.path.dirname(cur_path)
-    file = os.path.dirname(file)
     return file
 ws =  get_workspace()
+
+
 
 
 def get_common_params():
@@ -226,7 +227,7 @@ if __name__ == "__main__":
 
     print(f'Number of Train:{len(train_dataset)} | Number of val:{len(val_dataset)} | Number of test:{len(test_dataset)}')
 
-    from algorithm.strategy_model_1 import SynRTP, save2file
+    from algorithm.strategy_model import SynRTP, save2file
     strategy_model, save2file = SynRTP, save2file
     strategy_model = strategy_model(params)
 
@@ -259,9 +260,8 @@ if __name__ == "__main__":
     strategy_early_stop = EarlyStop(mode='maximize', patience=params['early_stop'])
     strategy_model_name = strategy_model.model_file_name() + f'{time.strftime("%m-%d-%H-%M")}' + params['model'] + str(params['xr_type'])
     strategy_model_path = os.path.join(ws, 
-                                   'SynRTP', 
-                                   'data', 
-                                   'dataset', 
+                                   'model_results', 
+                                   'synrtp',
                                    params["dataset"], 
                                    'sort_models', 
                                    strategy_model_name)
@@ -327,6 +327,7 @@ if __name__ == "__main__":
                     strategy_optimizer.step()
                 else:
                     # RL branch: mix cross-entropy and GDRPO policy optimization
+                    # When G=1, the greedy policy generates one route; otherwise, the reinforcement learning sampling policy generates G routes.
                     probs_sample, selections, eta_sample = strategy_model(params, V, V_reach_mask, E, start_fea, start_idx, cou_fea, route_label, V_len,
                                                               node_in_degree_flat, node_out_degree_flat, shortest_path_distances_flat, shortest_path_edge_features_aggregated_flat,  False, G=1)
                     unrolled = probs_sample.view(-1, probs_sample.size(-1))

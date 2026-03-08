@@ -76,7 +76,7 @@ class SynDataset(Dataset):
 def get_common_params():
     parser = argparse.ArgumentParser(description="Entry Point of the code")
     parser.add_argument(
-        "--dataset", default="yt_dataset", type=str, help="the name of dataset"
+        "--dataset", default="cq_dataset", type=str, help="the name of dataset"
     )
     parser.add_argument("--train_path", type=str, default=None)
     parser.add_argument("--val_path", type=str, default=None)

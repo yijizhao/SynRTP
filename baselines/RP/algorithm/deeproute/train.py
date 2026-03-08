@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     import  data.dataset as get_data
     from utils.util import ws
-    dataname = 'pickup_yt_0614_dataset_change'
+    dataname = 'pickup_cq_0614_dataset_change'
 
 
     logger = logging.getLogger('training')

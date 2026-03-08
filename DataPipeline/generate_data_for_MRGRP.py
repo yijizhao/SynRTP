@@ -29,7 +29,7 @@ def dir_check(path):
 
 def get_params():
     parser = argparse.ArgumentParser(description='Data Preprocessing for New Model Structure')
-    parser.add_argument('--dataset', default='yt_dataset', type=str, help='Dataset name for constructing folder paths')
+    parser.add_argument('--dataset', default='cq_dataset', type=str, help='Dataset name for constructing folder paths')
     parser.add_argument("--train_path", type=str, default=None)
     parser.add_argument("--val_path", type=str, default=None)
     parser.add_argument("--test_path", type=str, default=None)

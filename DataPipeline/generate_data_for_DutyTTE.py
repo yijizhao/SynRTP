@@ -54,7 +54,7 @@ def dir_check(path):
 
 def get_common_params():
     parser = argparse.ArgumentParser(description='Entry Point of the code')
-    parser.add_argument('--dataset', default='yt_dataset', type=str, help='logistics service of picking up')
+    parser.add_argument('--dataset', default='cq_dataset', type=str, help='logistics service of picking up')
     parser.add_argument("--train_path", type=str, default=None)
     parser.add_argument("--val_path", type=str, default=None)
     parser.add_argument("--test_path", type=str, default=None)

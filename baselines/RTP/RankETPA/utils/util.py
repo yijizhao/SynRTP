@@ -149,7 +149,7 @@ def get_common_params():
     # dataset
     parser.add_argument('--min_task_num', type=int, default=0, help = 'minimal number of task')
     parser.add_argument('--max_task_num',  type=int, default=25, help = 'maxmal number of task')
-    parser.add_argument('--dataset', default='yt_dataset', type=str, help='food_cou or logistics')#logistics_0831, logistics_decode_mask
+    parser.add_argument('--dataset', default='cq_dataset', type=str, help='food_cou or logistics')
     parser.add_argument('--pad_value', type=int, default=24, help='logistics: max_num - 1, pd: max_num + 1')
     parser.add_argument(
         "--model",

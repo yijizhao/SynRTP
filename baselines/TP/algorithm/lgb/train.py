@@ -169,7 +169,7 @@ def get_params():
 if __name__ == "__main__":
     params = vars(get_params())
 
-    datasets = ['delivery_yt', 'delivery_sh', 'delivery_cq'] # the name of datasets
+    datasets = ['delivery_sh', 'delivery_cq'] # the name of datasets
     args_lst = []
     params["inference"] = False
     params['is_test'] = False

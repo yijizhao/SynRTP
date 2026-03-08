@@ -224,7 +224,7 @@ def get_common_params():
     # dataset
     parser.add_argument('--min_task_num', type=int, default=0, help = 'minimal number of task')
     parser.add_argument('--max_task_num',  type=int, default=25, help = 'maxmal number of task')
-    parser.add_argument('--dataset', default='yt_dataset', type=str, help='food_cou or logistics')
+    parser.add_argument('--dataset', default='cq_dataset', type=str, help='food_cou or logistics')
     parser.add_argument('--pad_value', type=int, default=24, help='logistics: max_num - 1, pd: max_num + 1')
     parser.add_argument('--num_worker_logistics', type=int, default=10000, help='10000 number of workers in logistics dataset')
     parser.add_argument(
@@ -296,7 +296,7 @@ def train_val_test(train_loader, val_loader, test_loader, model, device, process
         test_result = test_model(model, test_loader, device, params['pad_value'], params, save2file, 'test')
         print('\n-------------------------------------------------------------')
         print(f'{params["model"]} Evaluation in test:', test_result.route_eta_to_str())
-        with open('tempt_yt.txt', 'a') as file:
+        with open('tempt_cq.txt', 'a') as file:
             file.write(f'Test : {test_result.route_eta_to_str()}\n')
         return params
 

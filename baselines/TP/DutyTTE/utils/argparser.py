@@ -19,7 +19,7 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument("-res_path", type=str, help="results path", default=ws + "/results")
 
     # data config
-    parser.add_argument("-dataset", type=str, help="dataset name", default="pickup_yt_dataset")
+    parser.add_argument("-dataset", type=str, help="dataset name", default="pickup_cq_dataset")
     parser.add_argument("-d_name", type=str, default="CityA")
     parser.add_argument("-max_decode_step", type=int, help="max_decode_step", default=51)
 

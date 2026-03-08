@@ -222,7 +222,7 @@ if __name__ == "__main__":
     file = os.path.dirname(os.path.dirname(os.path.dirname(cur_path)))
 
     params = vars(get_params())
-    datasets = ['delivery_yt', 'delivery_sh', 'delivery_cq']  # the name of datasets
+    datasets = ['delivery_sh', 'delivery_cq']  # the name of datasets
     args_lst = []
     params["inference"] = False
     params['is_test'] = False

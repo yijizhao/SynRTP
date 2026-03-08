@@ -83,7 +83,7 @@ def get_params():
 if __name__ == "__main__":
     params = vars(get_params())
     params['cuda_id'] = 1
-    datasets = ['delivery_sh', 'delivery_cq', 'delivery_yt'] # the name of datasets
+    datasets = ['delivery_sh', 'delivery_cq'] # the name of datasets
     args_lst = []
     params['is_test'] = False
     params['early_stop'] = 4

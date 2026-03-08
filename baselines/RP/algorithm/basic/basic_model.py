@@ -333,7 +333,7 @@ if __name__ == '__main__':
         params = vars(get_params())
         for model in ['Distance-Greedy', 'Time-Greedy']:
             params['model'] = model
-            params['dataset'] = 'pickup_yt'
+            params['dataset'] = 'pickup_cq'
             params['batch_size'] = 16
             params.update(tuner_params)
             main(params)

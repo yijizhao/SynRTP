@@ -106,7 +106,7 @@ if __name__ == "__main__":
         params = vars(get_params())
         params.update(tuner_params)
         # deeproute: 128
-        params['dataset'] = 'pickup_yt_0614_dataset_change'
+        params['dataset'] = 'pickup_cq_0614_dataset_change'
         params['batch_size'] = 32
         params['worker_emb_dim'] = 20
         params['hidden_size'] = 32

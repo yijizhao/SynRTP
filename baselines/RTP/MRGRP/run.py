@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset', type=str, default='yt_dataset', help='dataset name')  
+    parser.add_argument('--dataset', type=str, default='cq_dataset', help='dataset name')  
     parser.add_argument('--model', type=str, default='mrgrp', help='model name')
     parser.add_argument('--device', type=str, default='cuda', help='device')
     parser.add_argument('--memory_size', type=int, default=9000, help='memory size')

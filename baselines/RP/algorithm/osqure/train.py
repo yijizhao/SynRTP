@@ -181,7 +181,7 @@ if __name__ == "__main__":
         logger.debug(tuner_params)
         params = vars(get_params())
         params.update(tuner_params)
-        params['dataset'] = 'pickup_yt'
+        params['dataset'] = 'pickup_cq'
         main(params)
     except Exception as exception:
         logger.exception(exception)

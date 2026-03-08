@@ -19,6 +19,7 @@ For SynRTP, hyperparameters are selected based on validation performance: the hi
 
 
 
+
 ## Dataset Description
 
 We evaluate SynRTP on four large-scale real-world instant-delivery datasets from the **LaDe** benchmark released by Cainiao Network. In our formulation, couriers are treated as workers and delivery tasks are treated as graph nodes. The four datasets cover diverse cities and logistics environments, including grid-like urban structures (Logistics-SH, Logistics-HZ), mountainous and spatially fragmented regions (Logistics-CQ), and a coastal-belt topology (Logistics-YT). This diversity provides a practical testbed for evaluating both route generation and time prediction under heterogeneous spatial layouts and demand patterns. All datasets are anonymized (e.g., identifier hashing and coordinate offsetting) for privacy protection.

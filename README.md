@@ -78,7 +78,7 @@ After downloading the original datasets, please use the following command to gen
 bash DataPipeline.sh
 ```
 
-To facilitate verification of the correctness of the model code, we provide a very small dataset of Logistics-YT, extracting a batch size of 8 from each of the original data training set, validation set and test set (the default batch size of the model dataset is 64).
+To facilitate verification of the correctness of the model code, we provide a very small dataset of Logistics-CQ, extracting a batch size of 8 from each of the original data training set, validation set and test set (the default batch size of the model dataset is 64).
 
 
 ### 1.4 Training SynRTP Model

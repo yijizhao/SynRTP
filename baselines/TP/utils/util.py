@@ -158,10 +158,10 @@ def get_common_params():
     )
 
     ## common settings for deep models
-    parser.add_argument('--batch_size', type=int, default=8, help='input batch size for training (default: 256)')
-    parser.add_argument('--num_epoch', type=int, default=100, help=' 80 number of epochs to train (default: 1000)')
+    parser.add_argument('--batch_size', type=int, default=8, help='input batch size for training (default: 64)')
+    parser.add_argument('--num_epoch', type=int, default=100, help=' 100 number of epochs to train (default: 100)')
     parser.add_argument('--lr', type=float, default=0.0001, metavar='LR', help='learning rate (default: 1e-4)')
-    parser.add_argument('--seed', type=int, default=2021, metavar='S', help='random seed (default: 6)')
+    parser.add_argument('--seed', type=int, default=2021, metavar='S', help='random seed (default: 2021)')
     parser.add_argument('--wd', type=float, default=1e-5, help='weight decay (default: 1e-5)')
     parser.add_argument('--early_stop', type=int, default=11, help='early stop at')
     parser.add_argument('--workers', type=int, default=2, help='number of data loading workers (default: 4)')
@@ -175,6 +175,16 @@ def get_common_params():
 def to_device(batch, device):
     batch = [x.to(device) for x in batch]
     return batch
+
+def seed_everything(seed):
+    os.environ["PL_GLOBAL_SEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 import time
 def train_val_test(train_loader, val_loader, test_loader, model, device, process_batch, test_model, params, save2file):

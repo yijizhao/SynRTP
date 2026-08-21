@@ -60,7 +60,7 @@ def get_common_params():
         default=8,
         help="input batch size for training (default: 64)",
     )
-    parser.add_argument('--num_epoch', type=int, default=300, help='number of epochs to train (default: 300)')
+    parser.add_argument('--num_epoch', type=int, default=100, help='number of epochs to train (default: 100)')
     parser.add_argument('--lr', type=float, default=0.0001, metavar='LR', help='learning rate (default: 0.0001)')
     parser.add_argument('--seed', type=int, default=2021, metavar='S', help='random seed (default: 2021)')
     parser.add_argument('--wd', type=float, default=1e-5, help='weight decay')

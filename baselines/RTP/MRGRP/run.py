@@ -13,7 +13,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def subworker(args, flags, T, is_print=False, random_seed=729, mode='train'):
+def subworker(args, flags, T, is_print=False, random_seed=2021, mode='train'):
 
     time.sleep(0.1)
     seed_everything(random_seed)
@@ -52,7 +52,7 @@ def experiment(args, T, mode='train'):
     workers = []
     gpu_controller = AutoGPU(args.memory_size, args)
 
-    for random_seed in range(1, args.seed_num+1):
+    for random_seed in [2021]:
 
         if args.parallel:
             is_print = True if (len(workers)==0 and mode=='train') else False
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', action='store_true', help='parallel')
     parser.add_argument('--force', action='store_true', help='force')
     parser.add_argument('--cpu_num', type=int, default=1, help='cpu num')
-    parser.add_argument('--batch_size', type=int, default=8, help='256 batch size')
+    parser.add_argument('--batch_size', type=int, default=8, help='64 batch size')
     parser.add_argument('--epochs', type=int, default=100, help='epochs')
     parser.add_argument('--train_use_ratio', type=float, default=1.0, help='use train ratio')
     parser.add_argument('--val_use_ratio', type=float, default=1.0, help='use val ratio')
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_path", type=str, default=None)
     # the name of datasets
     args_lst = []
-    for batch_size in [1024]:
+    for batch_size in [8]:
         for dataset in datasets:
             basic_params = dict_merge([params, {'batch_size':batch_size, 'dataset': dataset}])
             args_lst.append(basic_params)    

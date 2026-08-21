@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 from pprint import pprint
-from utils.util import get_common_params, dict_merge
+from utils.util import get_common_params, dict_merge, seed_everything
 
 def run(params):
+    seed_everything(params['seed'])
     pprint(params)
     model = params['model']
     if model == 'm2g4rtp_pickup':

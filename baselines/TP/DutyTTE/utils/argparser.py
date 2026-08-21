@@ -42,8 +42,8 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument("-delta", type=int, default=0.1)
 
     # training config
-    parser.add_argument("-n_epoch", type=int, help="number of epoch", default=100) # 142
-    parser.add_argument("-bs", type=int, help="batch size", default=128) 
+    parser.add_argument("-n_epoch", type=int, help="number of epoch", default=100) 
+    parser.add_argument("-bs", type=int, help="batch size", default=64) 
     parser.add_argument("-lr", type=float, help="learning rate", default=0.001)
     parser.add_argument("-rl_ratio", type=int, help="ratio of policy loss", default=1)
     parser.add_argument("-omega", type=int, help="ratio of policy loss", default=1)

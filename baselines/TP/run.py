@@ -3,8 +3,9 @@ import sys
 import torch
 
 from pprint import pprint
-from utils.util import get_common_params, dict_merge
+from utils.util import get_common_params, dict_merge, seed_everything
 def run(params):
+    seed_everything(params['seed'])
     pprint(params)
     model = params['model']
     if model == 'speed':

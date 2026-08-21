@@ -16,7 +16,7 @@ def print_m(*args, **kwargs):
     kwargs.setdefault('flush', True)
     print(*args, **kwargs)
 
-def mrgrp_train(args, flags, T, model_path, file_name, is_print=False, random_seed=729):
+def mrgrp_train(args, flags, T, model_path, file_name, is_print=False, random_seed=2021):
 
     is_test = False
     log_dir = os.path.join(args.log_dir, f'seed{random_seed}') 
@@ -33,7 +33,6 @@ def mrgrp_train(args, flags, T, model_path, file_name, is_print=False, random_se
                     flags.dict_length_late_meal_report_c]
 
     train_dataset = RPDataset(args, flags, mode='train')
-    # batch size 1024
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
     
     val_dataset = RPDataset(args, flags, mode='val')
@@ -124,7 +123,7 @@ def mrgrp_train(args, flags, T, model_path, file_name, is_print=False, random_se
 
 
             
-def mrgrp_test(args, flags, T, model_path, file_name, is_print=False, random_seed=729):
+def mrgrp_test(args, flags, T, model_path, file_name, is_print=False, random_seed=2021):
     is_test = True
 
     log_dir = os.path.join(args.log_dir, f'seed{random_seed}')

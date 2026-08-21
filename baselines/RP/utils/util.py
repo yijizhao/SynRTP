@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import random
 import os
 from tqdm import  tqdm
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
@@ -233,10 +234,10 @@ def get_common_params():
         help="model name: Distance-Greedy, drl4route, etc.",
     )
     ## common settings for deep models
-    parser.add_argument('--batch_size', type=int, default=8, help='input batch size for training (default: 256)')
-    parser.add_argument('--num_epoch', type=int, default=100, help='number of epochs to train (80 default: 1000)')
+    parser.add_argument('--batch_size', type=int, default=8, help='input batch size for training (default: 64)')
+    parser.add_argument('--num_epoch', type=int, default=100, help='number of epochs to train (default: 100)')
     parser.add_argument('--lr', type=float, default=0.0001, metavar='LR', help='learning rate (default: 1e-4)')
-    parser.add_argument('--seed', type=int, default=2021, metavar='S', help='random seed (default: 6)')
+    parser.add_argument('--seed', type=int, default=2021, metavar='S', help='random seed (default: 2021)')
     parser.add_argument('--wd', type=float, default=1e-5, help='weight decay (default: 1e-5)')
     parser.add_argument('--early_stop', type=int, default=11, help='11 early stop at')
     parser.add_argument('--workers', type=int, default=2, help='number of data loading workers (default: 4)')
@@ -401,15 +402,15 @@ def get_model_function(model):
         raise  NotImplementedError
 
 
-def seed_it(seed):
-    os.environ["PYTHONSEED"] = str(seed)
+def seed_everything(seed):
+    os.environ["PL_GLOBAL_SEED"] = str(seed)
+    random.seed(seed)
     np.random.seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
-    torch.backends.cudnn.enabled = True
     torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def run(params, DATASET, PROCESS_BATCH, TEST_MODEL, collate_fn = None):
     device = torch.device(f'cuda:{params["cuda_id"]}' if torch.cuda.is_available() else 'cpu')

@@ -439,6 +439,7 @@ class SynRTPDataset(Dataset):
         # Expected keys include 'V','V_len','V_reach_mask', etc.
         self.data = np.load(path, allow_pickle=True).item()
 
+
     def __len__(self):
         return self.data['V'].shape[0]   
 

@@ -376,3 +376,73 @@ class Uncertainty_loss(nn.Module):
             total_loss += weight * loss + sigma_sq
             self.weights.append(weight.item())
         return total_loss
+
+
+import torch
+from collections import defaultdict
+
+class SpatialMetricsEvaluator:
+    """
+    Spatial and topological metrics evaluator for route prediction:
+    1. DTW (Dynamic Time Warping)
+    2. SAGD (Squared Adjacent Gap Deviation)
+    """
+
+    def __init__(self):
+        self.metrics_sum = defaultdict(float)
+        self.samples_count = 0
+
+    def _compute_dtw(self, pred_coords, gt_coords, lengths):
+        """
+        Batch Vectorized DTW
+        """
+        B, max_L, _ = pred_coords.shape
+
+        dist = torch.cdist(pred_coords, gt_coords) 
+
+        dp = torch.full((B, max_L + 1, max_L + 1), float('inf'), device=pred_coords.device)
+        dp[:, 0, 0] = 0.0
+
+        for i in range(1, max_L + 1):
+            for j in range(1, max_L + 1):
+                min_cost = torch.min(
+                    torch.min(dp[:, i-1, j], dp[:, i, j-1]),
+                    dp[:, i-1, j-1]
+                )
+                dp[:, i, j] = dist[:, i-1, j-1] + min_cost
+
+        batch_indices = torch.arange(B, device=pred_coords.device)
+        dtw_scores = dp[batch_indices, lengths, lengths]
+
+        dtw_scores = torch.where(lengths > 1, dtw_scores, torch.zeros_like(dtw_scores))
+
+        return dtw_scores
+
+    def update(self, route_pred, route_label, label_len, valid_V):
+        """Update and accumulate metrics"""
+        B, N = route_pred.shape
+        device = route_pred.device
+
+        pred_coords = torch.gather(valid_V[..., 1:3], 1, route_pred.unsqueeze(-1).expand(-1, -1, 2))
+        gt_coords = torch.gather(valid_V[..., 1:3], 1, route_label.unsqueeze(-1).expand(-1, -1, 2))
+
+        mask_gap = torch.arange(N-1, device=device).unsqueeze(0) < (label_len - 1).unsqueeze(1)
+        valid_gap_len = (label_len - 1).float().clamp(min=1)
+
+        # 1. DTW (Dynamic Time Warping) converted to KM
+        dtw = self._compute_dtw(pred_coords, gt_coords, label_len) * 111.2
+        self.metrics_sum['DTW'] += dtw.sum().item()
+
+        # 2. SAGD (Squared Adjacent Gap Deviation)
+        pos_in_P = torch.argmax((route_pred.unsqueeze(1) == route_label.unsqueeze(2)).int(), dim=2)
+        gap = torch.abs(pos_in_P[:, 1:] - pos_in_P[:, :-1])
+
+        w_bp = torch.clamp(gap - 1, min=0).float()
+        
+        sagd = (w_bp.pow(2) * mask_gap).sum(dim=1) / valid_gap_len
+        self.metrics_sum['SAGD'] += sagd.sum().item()
+
+        self.samples_count += B
+
+    def get_results(self):
+        return {k: v / self.samples_count for k, v in self.metrics_sum.items()}

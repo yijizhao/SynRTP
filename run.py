@@ -158,6 +158,8 @@ def test_model(strategy_model,test_dataloader, device, pad_value, params, save2f
     """
     strategy_model.eval()
     evaluators = [Metric([1, 25])]
+    from utils.utils import SpatialMetricsEvaluator
+    spatial_evaluator = SpatialMetricsEvaluator()
 
     with torch.no_grad():
         for batch in tqdm(test_dataloader):
@@ -198,8 +200,25 @@ def test_model(strategy_model,test_dataloader, device, pad_value, params, save2f
             # update all evaluators with filtered predictions and labels
             for e in evaluators:
                 e.update_route_eta(route_pred, route_label, label_len, eta_pred, eta_label)
+
+            valid_mask = route_label.min(dim=1)[0] != pad_value
+            d_v = V.size(-1)
+            valid_V = V.reshape(B_flat, N, d_v)[valid_mask]
+
+            if mode == 'test':
+                spatial_evaluator.update(route_pred, route_label, label_len, valid_V)
+
     if mode == 'val' :
         return evaluators[-1]
+
+    if mode == 'test':
+        spatial_results = spatial_evaluator.get_results()
+        txt_path = f'Eval_{params["dataset"]}.txt'
+        with open(txt_path, 'a', encoding='utf-8') as f:
+            for k, v in spatial_results.items():
+                f.write(f"{k}: {v:.4f} | ")
+            f.write("\n")
+
 
     for e in evaluators:
         params_save = dict_merge([e.route_eta_to_dict(), params])

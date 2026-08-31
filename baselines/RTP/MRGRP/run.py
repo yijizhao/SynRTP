@@ -73,7 +73,6 @@ def dict_merge(dict_list = []):
 if __name__ == '__main__':
 
     multiprocessing.set_start_method('spawn')
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dataset', type=str, default='cq_dataset', help='dataset name')  

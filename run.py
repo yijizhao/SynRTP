@@ -12,7 +12,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from utils.eval import Metric
 from algorithm.strategy_model import SynRTPDataset as DATASET
-from utils.utils import compute_lsd,EarlyStop,dict_merge, get_reinforce_samples,get_samples,batch2input,get_nonzeros_nrl,dir_check,compute_lsd_gdrpo,GDRPOLoss
+from utils.utils import compute_lsd,EarlyStop,dict_merge, get_reinforce_samples,get_samples,batch2input,get_nonzeros_nrl,dir_check,compute_lsd_rapo,RAPOLoss
 from utils.utils import eta_mae_loss_calc, Uncertainty_loss
 from torch.optim.lr_scheduler import CosineAnnealingLR
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
@@ -326,7 +326,7 @@ if __name__ == "__main__":
                     loss.backward()
                     strategy_optimizer.step()
                 else:
-                    # RL branch: mix cross-entropy and GDRPO policy optimization
+                    # RL branch: mix cross-entropy and RAPO policy optimization
                     # When G=1, the greedy policy generates one route; otherwise, the reinforcement learning sampling policy generates G routes.
                     probs_sample, selections, eta_sample = strategy_model(params, V, V_reach_mask, E, start_fea, start_idx, cou_fea, route_label, V_len,
                                                               node_in_degree_flat, node_out_degree_flat, shortest_path_distances_flat, shortest_path_edge_features_aggregated_flat,  False, G=1)
@@ -346,16 +346,16 @@ if __name__ == "__main__":
                         old_log_probs, seq_pred_len, eta_sample, time_label)
 
                     # compute rewards (LSD difference) and advantages
-                    lsd_errors_sample, lsd_errors_greedy = compute_lsd_gdrpo(label, pred, pred_greedy, label_len_list)
+                    lsd_errors_sample, lsd_errors_greedy = compute_lsd_rapo(label, pred, pred_greedy, label_len_list)
                     advantages = lsd_errors_greedy - lsd_errors_sample
 
                     # ETA prediction loss
                     eta_mae_loss = eta_mae_loss_calc(time_label, label_len_list, eta_sample)
 
-                    # policy loss (GDRPO) and combined multi-task loss
-                    loss_fn = GDRPOLoss()
-                    loss_gdrpo = loss_fn(new_log_probs[valid_indices], old_log_probs[valid_indices].detach(), advantages)
-                    current_total_loss = multi_task_loss_fn(cross_entropy_loss, loss_gdrpo, eta_mae_loss)
+                    # policy loss (RAPO) and combined multi-task loss
+                    loss_fn = RAPOLoss()
+                    loss_rapo = loss_fn(new_log_probs[valid_indices], old_log_probs[valid_indices].detach(), advantages)
+                    current_total_loss = multi_task_loss_fn(cross_entropy_loss, loss_rapo, eta_mae_loss)
 
                     strategy_optimizer.zero_grad()
                     current_total_loss.backward()
@@ -363,9 +363,9 @@ if __name__ == "__main__":
                     strategy_optimizer.step()
 
                     if ave_loss is None:
-                        ave_loss = loss_gdrpo.item()
+                        ave_loss = loss_rapo.item()
                     else:
-                        ave_loss = ave_loss * i / (i + 1) + loss_gdrpo.item()/ (i + 1)
+                        ave_loss = ave_loss * i / (i + 1) + loss_rapo.item()/ (i + 1)
 
                     if loss_T is None:
                         loss_T = eta_mae_loss.item()

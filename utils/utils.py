@@ -171,7 +171,7 @@ def get_log_prob_mask(pred_len, params):
 
 
 
-def compute_lsd_gdrpo(true_routes, pred_routes, pred_greedy, route_label_len):
+def compute_lsd_rapo(true_routes, pred_routes, pred_greedy, route_label_len):
     B, G, T = pred_routes.shape
     device = pred_routes.device
 
@@ -180,24 +180,22 @@ def compute_lsd_gdrpo(true_routes, pred_routes, pred_greedy, route_label_len):
 
     valid_mask = (true_expanded != Utils.params['pad_value'])
     true_routes_exp = true_routes.unsqueeze(1)
-    weights = torch.ones(T, device=device).float().view(1, 1, -1)
+    weights = torch.ones(T, device=device).float().view(1, 1, -1) 
 
     pos_matrix_base = torch.arange(T, device=device).view(1, 1, -1).expand(B, G, -1) 
-    true_pos = pos_matrix_base * valid_mask 
+    true_pos = pos_matrix_base * valid_mask # Shape [B, G, T]
 
     comparison_sample = (true_routes_exp.unsqueeze(3) == pred_routes.unsqueeze(2))
     pred_indices_sample = torch.arange(T, device=device).view(1, 1, 1, -1).expand(B, G, T, -1)
     large_value = T
     masked_indices_sample = torch.where(comparison_sample, pred_indices_sample, large_value)
-    pred_pos_lookup_sample = torch.min(masked_indices_sample, dim=3)[0].float() 
-    pred_pos_sample = pred_pos_lookup_sample
+    pred_pos_lookup_sample = torch.min(masked_indices_sample, dim=3)[0].float() # Shape [B, G, T]
+    pred_pos_sample = pred_pos_lookup_sample # Shape [B, G, T]
     found_mask_sample = (pred_pos_sample < T) & valid_mask 
-    squared_diff_sample = torch.zeros_like(true_pos, dtype=torch.float) 
 
-    valid_indices_sample = found_mask_sample.nonzero(as_tuple=True)
-    if len(valid_indices_sample[0]) > 0: 
-        squared_diff_sample[valid_indices_sample] = (true_pos[valid_indices_sample] - pred_pos_sample[valid_indices_sample]).pow(2)
-    weighted_sum_sample = (squared_diff_sample * weights * found_mask_sample).sum(dim=2)  
+    squared_diff_sample = (true_pos - pred_pos_sample).pow(2) * found_mask_sample.float()
+
+    weighted_sum_sample = (squared_diff_sample * weights).sum(dim=2) 
     valid_counts_sample = found_mask_sample.sum(dim=2).clamp(min=1) 
     lsd_errors_sample = (weighted_sum_sample / valid_counts_sample)
 
@@ -208,17 +206,15 @@ def compute_lsd_gdrpo(true_routes, pred_routes, pred_greedy, route_label_len):
     pred_pos_lookup_greedy = torch.min(masked_indices_greedy, dim=3)[0].float() # Shape [B, G, T]
     pred_pos_greedy = pred_pos_lookup_greedy # Shape [B, G, T]
     found_mask_greedy = (pred_pos_greedy < T) & valid_mask 
-    squared_diff_greedy = torch.zeros_like(true_pos, dtype=torch.float) 
-    valid_indices_greedy = found_mask_greedy.nonzero(as_tuple=True)
-    if len(valid_indices_greedy[0]) > 0: 
-        squared_diff_greedy[valid_indices_greedy] = (true_pos[valid_indices_greedy] - pred_pos_greedy[valid_indices_greedy]).pow(2)
-    
-    weighted_sum_greedy = (squared_diff_greedy * weights * found_mask_greedy).sum(dim=2) 
+
+    squared_diff_greedy = (true_pos - pred_pos_greedy).pow(2) * found_mask_greedy.float()
+    weighted_sum_greedy = (squared_diff_greedy * weights).sum(dim=2) 
     valid_counts_greedy = found_mask_greedy.sum(dim=2).clamp(min=1) 
     lsd_errors_greedy = (weighted_sum_greedy / valid_counts_greedy)
-    
+
     # return (sampled-LSD, greedy-LSD) per batch
     return lsd_errors_sample, lsd_errors_greedy
+
 
 
 def compute_lsd(true_routes, pred_routes, route_label_len):
@@ -325,28 +321,8 @@ def write_list_list(fp, list_, model="a", sep=","):
             f.write(f"{a_line}\n")
 
 
-from multiprocessing import Pool
-def multi_thread_work(parameter_queue, function_name, thread_number=5):
-    pool = Pool(thread_number)
-    result = pool.map(function_name, parameter_queue)
-    pool.close()
-    pool.join()
-    return result
-
-
-def kl_divergence_gdrpo(old_log_probs, new_log_probs):
-    # symmetric KL per sample between given log-prob tensors
-    new_probs = torch.exp(new_log_probs)
-    new_probs = new_probs / (new_probs.sum(dim=1, keepdim=True) + 1e-10)
-    old_probs = torch.exp(old_log_probs)
-    old_probs = old_probs / (old_probs.sum(dim=1, keepdim=True) + 1e-10)
-
-    kl_elements = old_probs * (torch.log(old_probs + 1e-10) - torch.log(new_probs + 1e-10))
-
-    return kl_elements.mean(dim=-1).mean()
-
 import torch.nn as nn
-class GDRPOLoss(nn.Module):
+class RAPOLoss(nn.Module):
     """PPO-style clipped policy loss (no value term).
 
     Returns scalar policy loss.
@@ -371,26 +347,14 @@ class GDRPOLoss(nn.Module):
 
 def eta_mae_loss_calc(time_label, label_len, eta):
     # compute MAE between predicted and true per-leg durations (from cumulative times)
-    N = eta.shape[1]
-    B = time_label.shape[0]
-    time_label = time_label.reshape(B, N)
-    eta = eta.reshape(B, N)
-    label_len = label_len.reshape(B, 1)
-    pred_durations_flat = torch.empty(0).to(time_label.device)
-    label_durations_flat = torch.empty(0).to(time_label.device)
-
-    for i in range(len(label_len)):
-        lab_len = label_len[i]
-        lab_cumulative = time_label[i][:lab_len.long()]
-        prev_cumulative_times = torch.cat([torch.tensor([0.0]).to(time_label.device), lab_cumulative[:-1]])
-        lab_durations = lab_cumulative - prev_cumulative_times
-        pred_cumulative = eta[i][:lab_len.long()]
-        prev_cumulative_pred = torch.cat([torch.tensor([0.0]).to(eta.device), pred_cumulative[:-1]])
-        pred_durations = pred_cumulative - prev_cumulative_pred
-        pred_durations_flat = torch.cat([pred_durations_flat, pred_durations])
-        label_durations_flat = torch.cat([label_durations_flat, lab_durations])
-
-    return F.l1_loss(pred_durations_flat, label_durations_flat)
+    B, N = time_label.shape
+    mask = torch.arange(N, device=time_label.device).unsqueeze(0) < label_len.unsqueeze(1)
+    prev_time_label = torch.cat([torch.zeros((B, 1), device=time_label.device), time_label[:, :-1]], dim=1)
+    lab_durations = time_label - prev_time_label
+    prev_eta = torch.cat([torch.zeros((B, 1), device=eta.device), eta[:, :-1]], dim=1)
+    pred_durations = eta - prev_eta
+    
+    return F.l1_loss(pred_durations[mask], lab_durations[mask])
 
 
 class Uncertainty_loss(nn.Module):

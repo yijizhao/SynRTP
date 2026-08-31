@@ -366,57 +366,51 @@ class SynRTP(nn.Module):
 
         else:
 
-            all_selections = []  
-            all_old_log_probs = []   
-            all_new_log_probs = [] 
-
             # Multi-sample branch: sample G routes per instance and return their log-probs
-            for g in range(G):
-                hidden = b_init_hx.clone()  
-                mask = V_reach_mask_t.clone().detach()  
-                idxs = start_idx.clone() 
-                decoder_input = decoder_input_clone.clone() 
-                selections = []    
-                old_log_probs  = [] 
-                new_log_probs = []  
+            B_eff = V_reach_mask_t.size(0) 
+            hidden = b_init_hx.repeat_interleave(G, dim=0)
+            mask = V_reach_mask_t.repeat_interleave(G, dim=0)
+            idxs = start_idx.repeat_interleave(G, dim=0)
+            decoder_input = decoder_input_clone.repeat_interleave(G, dim=0)
+            expanded_context = context.repeat_interleave(G, dim=1)
+            expanded_embedded_inputs = embedded_inputs.repeat_interleave(G, dim=1)
 
-                for i in steps:
-                    hidden, logits, log_p, probs, mask = self.recurrence(decoder_input, hidden, mask, idxs, context )
+            step_selections = []
+            step_old_log_probs = []
+            step_new_log_probs = []
 
-                    idxs, old_log_prob = self.decode(
-                        probs,
-                        mask,
-                        sample, 
-                        logits
-                    )
-                    # old_log_prob: log prob from sampling distribution; new_log_prob: model log_p at chosen idx
-                    old_log_probs .append(old_log_prob)
-                    new_log_prob = log_p.gather(1, idxs.unsqueeze(1)).squeeze(1)
-                    new_log_probs.append(new_log_prob)
+            for i in steps:
+                hidden, logits, log_p, probs, mask = self.recurrence(
+                    decoder_input, hidden, mask, idxs, expanded_context
+                )
 
-                    decoder_input = torch.gather(
-                        embedded_inputs,  
-                        0,
-                        idxs.contiguous().view(1, B, 1).expand(1, B, embedded_inputs.size()[2])
-                    ).squeeze(0)
-                    selections.append(idxs)
+                idxs, old_log_prob = self.decode(
+                    probs,
+                    mask,
+                    sample, 
+                    logits
+                )
 
-                # accumulate per-step log-probs to path-level sums: shape [B*T]
-                # path_old_log_probs: sum of sampled (old) log-probs; used for importance correction
-                path_old_log_probs = torch.stack(old_log_probs, 1).sum(dim=1)  # [B*T]
-                path_new_log_probs = torch.stack(new_log_probs, 1).sum(dim=1)  # [B*T]
+                new_log_prob = log_p.gather(1, idxs.unsqueeze(1)).squeeze(1)
 
-                all_selections.append(torch.stack(selections, 1))  # [B*T, N_nodes]
-                all_old_log_probs.append(path_old_log_probs)         # [B*T]
-                all_new_log_probs.append(path_new_log_probs)         # [B*T]
+                decoder_input = torch.gather(
+                    expanded_embedded_inputs,  
+                    0,
+                    idxs.contiguous().view(1, B_eff * G, 1).expand(1, B_eff * G, expanded_embedded_inputs.size(2))
+                ).squeeze(0)
+
+                step_selections.append(idxs)
+                step_old_log_probs.append(old_log_prob)
+                step_new_log_probs.append(new_log_prob)
 
             # outputs
-            selections = torch.stack(all_selections, 1)
-            old_log_probs = torch.stack(all_old_log_probs, 1)
-            new_log_probs = torch.stack(all_new_log_probs, 1)
+            selections = torch.stack(step_selections, 1).view(B_eff, G, -1)
+            old_log_probs = torch.stack(step_old_log_probs, 1).sum(dim=1).view(B_eff, G)
+            new_log_probs = torch.stack(step_new_log_probs, 1).sum(dim=1).view(B_eff, G)
 
             return selections, old_log_probs, new_log_probs
 
+        
     def model_file_name(self):
         t = time.time()
         file_name = '+'.join([f'{k}-{self.config[k]}' for k in ['hidden_size']])

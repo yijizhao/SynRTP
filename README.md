@@ -15,14 +15,14 @@ To ensure reproducibility and a rigorous fair comparison, all experiments are co
 
 #### (1) Standardized benchmark configurations
 
-* **[`LaDe`](https://huggingface.co/datasets/Cainiao-AI/LaDe) benchmark baselines.** Most baselines (including DeepRoute, Graph2Route, etc.) and the datasets used in this paper are taken from the open-source LaDe benchmark repository. To make our results directly comparable with community standards, we strictly use the official implementations and their default optimal hyperparameter settings provided in LaDe.  
-* **Independent baselines.** For baselines not included in LaDe (e.g., DutyTTE and MRGRP), we use their official open-source implementations and adopt the default optimal hyperparameter combinations recommended by the original authors. This strategy ensures that every baseline is evaluated close to its intended peak performance, avoiding bias from subjective re-tuning.
+* **[`LaDe`](https://huggingface.co/datasets/Cainiao-AI/LaDe) benchmark baselines.** Most baselines (including DeepRoute, Graph2Route, etc.) and the datasets used in this paper are taken from the open source LaDe benchmark repository. We follow the unified evaluation protocol of the LaDe benchmark, including consistent data splits, preprocessing, feature construction, and metric computation. Hyperparameters are selected using only the validation set of Logistics SH and are subsequently fixed for the other three datasets to avoid dataset specific retuning. Common tunable hyperparameters include the hidden dimension in {16, 32, 64} and batch size in {32, 64, 128}; for graph based models, the number of graph layers is additionally searched over {2, 3, 4} where applicable. 
+* **Independent baselines.** For baselines not included in LaDe (e.g., DutyTTE and MRGRP), official implementations are adopted whenever available. Architecture specific hyperparameters follow the recommended configurations of the corresponding implementations. For instance, MRGRP retains its official hidden dimension of 256, which is coupled to its original architecture.
 
 #### (2) Strict fairness control
 
 Beyond model configurations, we enforce a unified training protocol across all methods so that no model receives an unfair advantage.  
 - **Input consistency.** All models use exactly the same set of input features (spatial coordinates, temporal timestamps, and courier profiles). No baseline is handicapped by missing features, and no model has access to additional information unavailable to others.  
-- **Termination criterion.** To prevent over-training or under-training biases, we apply a consistent early-stopping mechanism to all models: training stops if the validation metric (KRC) does not improve for 11 consecutive epochs.
+- **Termination criterion.** We apply a consistent early stopping mechanism to all models. Training stops if the validation metric does not improve for 11 consecutive epochs. KRC is monitored for RP and joint RTP models, whereas MAE is monitored for TP models.
 
 #### (3) SynRTP settings
 

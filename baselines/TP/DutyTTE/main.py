@@ -19,7 +19,6 @@ if __name__ == "__main__":
     torch.manual_seed(2021)
     torch.cuda.manual_seed_all(2021)
     parser = get_argparser()
-
     args, _ = parser.parse_known_args()
     params = vars(args)
     datasets = [args.dataset]  # the name of datasets

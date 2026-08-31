@@ -26,6 +26,7 @@ def get_params():
     args, _ = parser.parse_known_args()
     return args
 
+
 if __name__ == "__main__":
     params = vars(get_params())
     datasets = [params["dataset"]]  # the name of datasets
